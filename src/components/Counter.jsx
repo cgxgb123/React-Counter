@@ -1,15 +1,50 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import reactLogo from "../assets/react.svg";
 
 const Counter = () => {
-  const [count, setCount] = useState(0);
-  const [history, setHistory] = useState([0]);
+  const savedCount = Number(localStorage.getItem("count")) || 0;
+
+  const [count, setCount] = useState(savedCount);
+  const [history, setHistory] = useState([savedCount]);
 
   const updateCount = (newCount) => {
     setCount(newCount);
     setHistory((prev) => [...prev, newCount]);
   };
+  const resetCounter = () => {
+    setCount(0);
+    setHistory([0]);
+    localStorage.removeItem("count");
+  };
+  const saveTimeout = useRef(null);
+
+  useEffect(() => {
+    saveTimeout.current = setTimeout(() => {
+      localStorage.setItem("count", count);
+    }, 300);
+
+    return () => {
+      clearTimeout(saveTimeout.current);
+    };
+  }, [count]);
+
   const [step, setStep] = useState(1);
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "ArrowUp") {
+        updateCount(count + step);
+      }
+      if (e.key === "ArrowDown") {
+        updateCount(count - step);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [count, step]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -37,6 +72,12 @@ const Counter = () => {
             className="flex-1 bg-green-500 text-white py-2 rounded"
           >
             +
+          </button>
+          <button
+            onClick={resetCounter}
+            className="w-auto bg-gray-700 text-white py-2 rounded mb-4"
+          >
+            Reset
           </button>
         </div>
         <p className="text-sm text-gray-600">History: {history.join(", ")}</p>
